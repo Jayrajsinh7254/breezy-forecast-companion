@@ -15,7 +15,7 @@ import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { toast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 
-const API_KEY = 'YOUR_API_KEY_HERE'; // Replace this with your actual OpenWeatherMap API key
+const API_KEY = '60a052d032bc64d5ac340034a74b5aa3'; // Replace this with your actual OpenWeatherMap API key
 
 interface WeatherData {
   name: string;
