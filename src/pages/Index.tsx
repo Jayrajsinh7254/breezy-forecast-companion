@@ -1,13 +1,458 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+
+import React, { useState, useEffect } from 'react';
+import { Search, MapPin, Thermometer, Droplets, Wind, Gauge, Eye, Sun, CloudRain, AlertTriangle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { WeatherCard } from '@/components/WeatherCard';
+import { ForecastCard } from '@/components/ForecastCard';
+import { WeatherBackground } from '@/components/WeatherBackground';
+import { toast } from '@/hooks/use-toast';
+
+const API_KEY = '4b8f2c5e8d1a6f3c9e7b2a4d8f5c1e9b'; // Demo key - users should replace with their own
+
+interface WeatherData {
+  name: string;
+  country: string;
+  temp: number;
+  feelsLike: number;
+  condition: string;
+  description: string;
+  icon: string;
+  humidity: number;
+  windSpeed: number;
+  pressure: number;
+  visibility: number;
+  uvIndex?: number;
+}
+
+interface ForecastData {
+  date: string;
+  temp: { min: number; max: number };
+  condition: string;
+  icon: string;
+  description: string;
+  humidity: number;
+  windSpeed: number;
+}
 
 const Index = () => {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
+  const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
+  const [forecastData, setForecastData] = useState<ForecastData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isCelsius, setIsCelsius] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+
+  const convertTemp = (temp: number) => {
+    return isCelsius ? temp : (temp * 9/5) + 32;
+  };
+
+  const formatTemp = (temp: number) => {
+    return `${Math.round(convertTemp(temp))}°${isCelsius ? 'C' : 'F'}`;
+  };
+
+  const getWeatherTip = (condition: string, temp: number) => {
+    const tempC = isCelsius ? temp : (temp - 32) * 5/9;
+    
+    if (condition.includes('rain')) {
+      return "🌧️ Rainy weather: Carry an umbrella and wear waterproof clothing.";
+    } else if (condition.includes('snow')) {
+      return "❄️ Snowy conditions: Drive carefully and dress warmly in layers.";
+    } else if (condition.includes('thunder')) {
+      return "⛈️ Thunderstorms: Stay indoors and avoid outdoor activities.";
+    } else if (tempC > 30) {
+      return "🌡️ Hot weather: Stay hydrated and seek shade during peak hours.";
+    } else if (tempC < 0) {
+      return "🧥 Freezing cold: Bundle up and protect exposed skin.";
+    } else if (condition.includes('clear') || condition.includes('sun')) {
+      return "☀️ Beautiful sunny day: Perfect for outdoor activities!";
+    } else if (condition.includes('cloud')) {
+      return "☁️ Cloudy skies: Comfortable weather for most activities.";
+    }
+    return "🌤️ Check conditions throughout the day and dress accordingly.";
+  };
+
+  const getSevereWeatherAlert = (weatherData: WeatherData) => {
+    if (!weatherData) return null;
+    
+    const { condition, windSpeed, temp } = weatherData;
+    const tempC = isCelsius ? temp : (temp - 32) * 5/9;
+    
+    if (condition.toLowerCase().includes('thunder') || condition.toLowerCase().includes('storm')) {
+      return "⚠️ Storm Warning: Heavy rain and strong winds expected. Stay indoors and avoid flooded areas.";
+    } else if (windSpeed > 40) {
+      return "💨 High Wind Alert: Winds above 40 km/h. Secure loose objects and drive carefully.";
+    } else if (tempC > 35) {
+      return "🌡️ Heat Warning: Extreme heat conditions. Stay hydrated and avoid prolonged sun exposure.";
+    } else if (tempC < -10) {
+      return "🧊 Cold Warning: Extreme cold conditions. Limit outdoor exposure and dress appropriately.";
+    }
+    return null;
+  };
+
+  const fetchWeatherData = async (city: string = '') => {
+    setLoading(true);
+    setError('');
+    
+    try {
+      let weatherResponse;
+      let forecastResponse;
+      
+      if (city) {
+        weatherResponse = await fetch(
+          `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${API_KEY}&units=metric`
+        );
+        forecastResponse = await fetch(
+          `https://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=${API_KEY}&units=metric`
+        );
+      } else {
+        // Try to get user location
+        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject);
+        });
+        
+        const { latitude, longitude } = position.coords;
+        weatherResponse = await fetch(
+          `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=${API_KEY}&units=metric`
+        );
+        forecastResponse = await fetch(
+          `https://api.openweathermap.org/data/2.5/forecast?lat=${latitude}&lon=${longitude}&appid=${API_KEY}&units=metric`
+        );
+      }
+      
+      if (!weatherResponse.ok || !forecastResponse.ok) {
+        throw new Error('Weather data not found');
+      }
+      
+      const weather = await weatherResponse.json();
+      const forecast = await forecastResponse.json();
+      
+      const weatherData: WeatherData = {
+        name: weather.name,
+        country: weather.sys.country,
+        temp: weather.main.temp,
+        feelsLike: weather.main.feels_like,
+        condition: weather.weather[0].main,
+        description: weather.weather[0].description,
+        icon: weather.weather[0].icon,
+        humidity: weather.main.humidity,
+        windSpeed: weather.wind.speed * 3.6, // Convert m/s to km/h
+        pressure: weather.main.pressure,
+        visibility: weather.visibility / 1000, // Convert to km
+      };
+      
+      // Process 5-day forecast (take one entry per day at 12:00)
+      const dailyForecasts: ForecastData[] = [];
+      const processedDates = new Set();
+      
+      forecast.list.forEach((item: any) => {
+        const date = new Date(item.dt * 1000);
+        const dateStr = date.toDateString();
+        
+        if (!processedDates.has(dateStr) && dailyForecasts.length < 5) {
+          processedDates.add(dateStr);
+          dailyForecasts.push({
+            date: date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
+            temp: {
+              min: Math.min(...forecast.list
+                .filter((f: any) => new Date(f.dt * 1000).toDateString() === dateStr)
+                .map((f: any) => f.main.temp_min)),
+              max: Math.max(...forecast.list
+                .filter((f: any) => new Date(f.dt * 1000).toDateString() === dateStr)
+                .map((f: any) => f.main.temp_max))
+            },
+            condition: item.weather[0].main,
+            icon: item.weather[0].icon,
+            description: item.weather[0].description,
+            humidity: item.main.humidity,
+            windSpeed: item.wind.speed * 3.6
+          });
+        }
+      });
+      
+      setWeatherData(weatherData);
+      setForecastData(dailyForecasts);
+      setLastUpdated(new Date());
+      
+      // Cache the data
+      localStorage.setItem('weatherData', JSON.stringify(weatherData));
+      localStorage.setItem('forecastData', JSON.stringify(dailyForecasts));
+      localStorage.setItem('lastUpdated', new Date().toISOString());
+      
+      toast({
+        title: "Weather updated",
+        description: `Weather data for ${weatherData.name} loaded successfully.`,
+      });
+      
+    } catch (err) {
+      console.error('Error fetching weather:', err);
+      setError(city ? 'City not found. Please check the spelling and try again.' : 'Location access denied. Showing cached data or default location.');
+      
+      // Try to load cached data
+      const cachedWeather = localStorage.getItem('weatherData');
+      const cachedForecast = localStorage.getItem('forecastData');
+      
+      if (cachedWeather && cachedForecast) {
+        setWeatherData(JSON.parse(cachedWeather));
+        setForecastData(JSON.parse(cachedForecast));
+        setLastUpdated(new Date(localStorage.getItem('lastUpdated') || ''));
+        toast({
+          title: "Showing cached data",
+          description: "Unable to fetch new data. Showing last known weather information.",
+        });
+      } else {
+        // Fallback to default city
+        await fetchWeatherData('New York');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      fetchWeatherData(searchQuery.trim());
+      setSearchQuery('');
+    }
+  };
+
+  const getMetricTooltip = (metric: string) => {
+    switch (metric) {
+      case 'humidity':
+        return "Humidity measures moisture in the air. Levels above 60% can feel muggy, while below 30% may dry your skin.";
+      case 'wind':
+        return "Wind speed indicates air movement. Speeds above 20 km/h may feel breezy. Secure loose objects if speeds exceed 40 km/h.";
+      case 'pressure':
+        return "Atmospheric pressure affects weather patterns. High pressure (>1020 hPa) often means clear skies, low pressure (<1000 hPa) can indicate storms.";
+      case 'visibility':
+        return "Visibility shows how far you can see. Less than 1km is poor visibility, affecting driving conditions.";
+      case 'feels-like':
+        return "Feels-like temperature accounts for humidity and wind, showing how hot or cold it actually feels to your body.";
+      default:
+        return "";
+    }
+  };
+
+  useEffect(() => {
+    fetchWeatherData();
+  }, []);
+
+  const severeWeatherAlert = weatherData ? getSevereWeatherAlert(weatherData) : null;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-400 via-blue-600 to-blue-800 flex items-center justify-center">
+        <div className="text-center text-white">
+          <div className="animate-spin w-16 h-16 border-4 border-white border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-xl">Loading weather data...</p>
+        </div>
       </div>
-    </div>
+    );
+  }
+
+  return (
+    <TooltipProvider>
+      <div className="min-h-screen relative overflow-hidden">
+        <WeatherBackground condition={weatherData?.condition || 'clear'} />
+        
+        <div className="relative z-10 min-h-screen bg-black/20 backdrop-blur-sm">
+          <div className="container mx-auto px-4 py-6 max-w-6xl">
+            {/* Header */}
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-8 gap-4">
+              <div>
+                <h1 className="text-4xl lg:text-5xl font-bold text-white mb-2">
+                  Weather App
+                </h1>
+                <p className="text-white/80 text-lg">
+                  Real-time weather information and 5-day forecast
+                </p>
+              </div>
+              
+              {/* Search and Controls */}
+              <div className="flex flex-col sm:flex-row gap-4 lg:items-center">
+                <form onSubmit={handleSearch} className="flex gap-2">
+                  <Input
+                    type="text"
+                    placeholder="Search city or ZIP code..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="bg-white/90 border-white/50 text-gray-900 placeholder-gray-600 min-w-64"
+                  />
+                  <Button type="submit" className="bg-white/20 hover:bg-white/30 text-white border-white/50">
+                    <Search className="w-4 h-4" />
+                  </Button>
+                </form>
+                
+                <Button
+                  onClick={() => setIsCelsius(!isCelsius)}
+                  variant="outline"
+                  className="bg-white/20 hover:bg-white/30 text-white border-white/50"
+                >
+                  °{isCelsius ? 'F' : 'C'}
+                </Button>
+              </div>
+            </div>
+
+            {error && (
+              <Alert className="mb-6 bg-red-500/20 border-red-500/50 text-white">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
+            {severeWeatherAlert && (
+              <Alert className="mb-6 bg-orange-500/20 border-orange-500/50 text-white">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription className="font-semibold">{severeWeatherAlert}</AlertDescription>
+              </Alert>
+            )}
+
+            {weatherData && (
+              <>
+                {/* Current Weather */}
+                <div className="grid lg:grid-cols-3 gap-6 mb-8">
+                  <div className="lg:col-span-2">
+                    <WeatherCard 
+                      weatherData={weatherData}
+                      formatTemp={formatTemp}
+                      getWeatherTip={getWeatherTip}
+                      lastUpdated={lastUpdated}
+                    />
+                  </div>
+                  
+                  {/* Weather Details */}
+                  <Card className="bg-white/10 backdrop-blur-md border-white/20 text-white">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Gauge className="w-5 h-5" />
+                        Weather Details
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex items-center justify-between p-3 bg-white/10 rounded-lg cursor-help">
+                            <div className="flex items-center gap-2">
+                              <Thermometer className="w-4 h-4" />
+                              <span>Feels like</span>
+                            </div>
+                            <span className="font-semibold">{formatTemp(weatherData.feelsLike)}</span>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs">{getMetricTooltip('feels-like')}</p>
+                        </TooltipContent>
+                      </Tooltip>
+
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex items-center justify-between p-3 bg-white/10 rounded-lg cursor-help">
+                            <div className="flex items-center gap-2">
+                              <Droplets className="w-4 h-4" />
+                              <span>Humidity</span>
+                            </div>
+                            <span className="font-semibold">{weatherData.humidity}%</span>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs">{getMetricTooltip('humidity')}</p>
+                        </TooltipContent>
+                      </Tooltip>
+
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex items-center justify-between p-3 bg-white/10 rounded-lg cursor-help">
+                            <div className="flex items-center gap-2">
+                              <Wind className="w-4 h-4" />
+                              <span>Wind Speed</span>
+                            </div>
+                            <span className="font-semibold">{Math.round(weatherData.windSpeed)} km/h</span>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs">{getMetricTooltip('wind')}</p>
+                        </TooltipContent>
+                      </Tooltip>
+
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex items-center justify-between p-3 bg-white/10 rounded-lg cursor-help">
+                            <div className="flex items-center gap-2">
+                              <Gauge className="w-4 h-4" />
+                              <span>Pressure</span>
+                            </div>
+                            <span className="font-semibold">{weatherData.pressure} hPa</span>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs">{getMetricTooltip('pressure')}</p>
+                        </TooltipContent>
+                      </Tooltip>
+
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex items-center justify-between p-3 bg-white/10 rounded-lg cursor-help">
+                            <div className="flex items-center gap-2">
+                              <Eye className="w-4 h-4" />
+                              <span>Visibility</span>
+                            </div>
+                            <span className="font-semibold">{weatherData.visibility} km</span>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs">{getMetricTooltip('visibility')}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* 5-Day Forecast */}
+                {forecastData.length > 0 && (
+                  <Card className="bg-white/10 backdrop-blur-md border-white/20 text-white">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Sun className="w-5 h-5" />
+                        5-Day Forecast
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                        {forecastData.map((day, index) => (
+                          <ForecastCard
+                            key={index}
+                            forecast={day}
+                            formatTemp={formatTemp}
+                            getWeatherTip={getWeatherTip}
+                          />
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </>
+            )}
+
+            {/* Footer */}
+            <div className="mt-12 text-center text-white/70">
+              <p className="text-sm">
+                Weather data provided by OpenWeatherMap API
+                {lastUpdated && (
+                  <span className="block mt-1">
+                    Last updated: {lastUpdated.toLocaleTimeString()}
+                  </span>
+                )}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </TooltipProvider>
   );
 };
 
