@@ -15,7 +15,7 @@ import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { toast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 
-const API_KEY = '4b8f2c5e8d1a6f3c9e7b2a4d8f5c1e9b'; // Demo key - users should replace with their own
+const API_KEY = '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'; // Demo key - users should replace with their own
 
 interface WeatherData {
   name: string;
