@@ -15,7 +15,7 @@ import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { toast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 
-const API_KEY = 'https://api.openweathermap.org/data/2.5/weather?lat=44.34&lon=10.99&appid={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}'; // Demo key - users should replace with their own
+const API_KEY = 'YOUR_API_KEY_HERE'; // Replace this with your actual OpenWeatherMap API key
 
 interface WeatherData {
   name: string;
