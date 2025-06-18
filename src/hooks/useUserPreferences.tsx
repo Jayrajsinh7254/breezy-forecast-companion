@@ -46,8 +46,8 @@ export const useUserPreferences = () => {
       if (data) {
         setPreferences({
           id: data.id,
-          favorite_locations: data.favorite_locations || [],
-          temperature_unit: data.temperature_unit || 'celsius',
+          favorite_locations: Array.isArray(data.favorite_locations) ? data.favorite_locations as string[] : [],
+          temperature_unit: (data.temperature_unit === 'celsius' || data.temperature_unit === 'fahrenheit') ? data.temperature_unit : 'celsius',
           default_location: data.default_location,
           notifications_enabled: data.notifications_enabled ?? true,
         });
