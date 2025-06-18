@@ -1,15 +1,19 @@
-
 import React, { useState, useEffect } from 'react';
-import { Search, MapPin, Thermometer, Droplets, Wind, Gauge, Eye, Sun, CloudRain, AlertTriangle } from 'lucide-react';
+import { Search, MapPin, Thermometer, Droplets, Wind, Gauge, Eye, Sun, CloudRain, AlertTriangle, User, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { WeatherCard } from '@/components/WeatherCard';
 import { ForecastCard } from '@/components/ForecastCard';
 import { WeatherBackground } from '@/components/WeatherBackground';
+import { UserProfile } from '@/components/UserProfile';
+import { useAuth } from '@/hooks/useAuth';
+import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { toast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 const API_KEY = '4b8f2c5e8d1a6f3c9e7b2a4d8f5c1e9b'; // Demo key - users should replace with their own
 
@@ -39,6 +43,10 @@ interface ForecastData {
 }
 
 const Index = () => {
+  const { user, loading: authLoading } = useAuth();
+  const { preferences, addFavoriteLocation } = useUserPreferences();
+  const navigate = useNavigate();
+  
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [forecastData, setForecastData] = useState<ForecastData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -46,6 +54,14 @@ const Index = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isCelsius, setIsCelsius] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [profileOpen, setProfileOpen] = useState(false);
+
+  // Use user preferences for temperature unit
+  useEffect(() => {
+    if (user && preferences.temperature_unit) {
+      setIsCelsius(preferences.temperature_unit === 'celsius');
+    }
+  }, [user, preferences.temperature_unit]);
 
   const convertTemp = (temp: number) => {
     return isCelsius ? temp : (temp * 9/5) + 32;
@@ -101,6 +117,11 @@ const Index = () => {
     try {
       let weatherResponse;
       let forecastResponse;
+      
+      // If no city provided and user has default location, use that
+      if (!city && user && preferences.default_location) {
+        city = preferences.default_location;
+      }
       
       if (city) {
         weatherResponse = await fetch(
@@ -221,6 +242,20 @@ const Index = () => {
     }
   };
 
+  const handleAddToFavorites = () => {
+    if (user && weatherData) {
+      addFavoriteLocation(`${weatherData.name}, ${weatherData.country}`);
+    } else {
+      navigate('/auth');
+    }
+  };
+
+  const handleFavoriteLocationClick = (location: string) => {
+    // Extract city name from "City, Country" format
+    const cityName = location.split(',')[0].trim();
+    fetchWeatherData(cityName);
+  };
+
   const getMetricTooltip = (metric: string) => {
     switch (metric) {
       case 'humidity':
@@ -240,11 +275,11 @@ const Index = () => {
 
   useEffect(() => {
     fetchWeatherData();
-  }, []);
+  }, [user, preferences.default_location]);
 
   const severeWeatherAlert = weatherData ? getSevereWeatherAlert(weatherData) : null;
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-400 via-blue-600 to-blue-800 flex items-center justify-center">
         <div className="text-center text-white">
@@ -273,8 +308,38 @@ const Index = () => {
                 </p>
               </div>
               
-              {/* Search and Controls */}
+              {/* User Actions and Controls */}
               <div className="flex flex-col sm:flex-row gap-4 lg:items-center">
+                {/* User Authentication */}
+                <div className="flex items-center gap-2">
+                  {user ? (
+                    <Dialog open={profileOpen} onOpenChange={setProfileOpen}>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" className="bg-white/20 hover:bg-white/30 text-white border-white/50">
+                          <User className="w-4 h-4 mr-2" />
+                          Profile
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                        <DialogHeader>
+                          <DialogTitle>User Profile & Preferences</DialogTitle>
+                        </DialogHeader>
+                        <UserProfile onClose={() => setProfileOpen(false)} />
+                      </DialogContent>
+                    </Dialog>
+                  ) : (
+                    <Button
+                      onClick={() => navigate('/auth')}
+                      variant="outline"
+                      className="bg-white/20 hover:bg-white/30 text-white border-white/50"
+                    >
+                      <User className="w-4 h-4 mr-2" />
+                      Sign In
+                    </Button>
+                  )}
+                </div>
+
+                {/* Search and Controls */}
                 <form onSubmit={handleSearch} className="flex gap-2">
                   <Input
                     type="text"
@@ -297,6 +362,34 @@ const Index = () => {
                 </Button>
               </div>
             </div>
+
+            {/* Favorite Locations (for logged in users) */}
+            {user && preferences.favorite_locations.length > 0 && (
+              <Card className="mb-6 bg-white/10 backdrop-blur-md border-white/20 text-white">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Star className="w-5 h-5" />
+                    Favorite Locations
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-2">
+                    {preferences.favorite_locations.map((location, index) => (
+                      <Button
+                        key={index}
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleFavoriteLocationClick(location)}
+                        className="bg-white/20 hover:bg-white/30 text-white border-white/50"
+                      >
+                        <MapPin className="w-3 h-3 mr-1" />
+                        {location}
+                      </Button>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {error && (
               <Alert className="mb-6 bg-red-500/20 border-red-500/50 text-white">
@@ -323,6 +416,20 @@ const Index = () => {
                       getWeatherTip={getWeatherTip}
                       lastUpdated={lastUpdated}
                     />
+                    
+                    {/* Add to Favorites Button */}
+                    {weatherData && (
+                      <div className="mt-4">
+                        <Button
+                          onClick={handleAddToFavorites}
+                          variant="outline"
+                          className="bg-white/20 hover:bg-white/30 text-white border-white/50"
+                        >
+                          <Star className="w-4 h-4 mr-2" />
+                          {user ? 'Add to Favorites' : 'Sign in to Save'}
+                        </Button>
+                      </div>
+                    )}
                   </div>
                   
                   {/* Weather Details */}
