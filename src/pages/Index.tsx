@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, MapPin, Thermometer, Droplets, Wind, Gauge, Eye, Sun, CloudRain, AlertTriangle, User, Star } from 'lucide-react';
+import { Search, MapPin, Thermometer, Droplets, Wind, Gauge, Eye, Sun, CloudRain, AlertTriangle, User, Star, Palette, Gamepad2, Mic } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,6 +9,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { WeatherCard } from '@/components/WeatherCard';
 import { ForecastCard } from '@/components/ForecastCard';
 import { WeatherBackground } from '@/components/WeatherBackground';
+import { ParticleWeather } from '@/components/ParticleWeather';
+import { WeatherGlobe } from '@/components/WeatherGlobe';
+import { VoiceWeatherSearch } from '@/components/VoiceWeatherSearch';
+import { WeatherMoodRecommendations } from '@/components/WeatherMoodRecommendations';
+import { WeatherGameification } from '@/components/WeatherGameification';
 import { UserProfile } from '@/components/UserProfile';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
@@ -55,6 +60,8 @@ const Index = () => {
   const [isCelsius, setIsCelsius] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'normal' | 'globe' | 'game'>('normal');
+  const [particleIntensity, setParticleIntensity] = useState(1);
 
   // Use user preferences for temperature unit
   useEffect(() => {
@@ -242,6 +249,10 @@ const Index = () => {
     }
   };
 
+  const handleVoiceSearch = (query: string) => {
+    fetchWeatherData(query);
+  };
+
   const handleAddToFavorites = () => {
     if (user && weatherData) {
       addFavoriteLocation(`${weatherData.name}, ${weatherData.country}`);
@@ -282,7 +293,8 @@ const Index = () => {
   if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-400 via-blue-600 to-blue-800 flex items-center justify-center">
-        <div className="text-center text-white">
+        <ParticleWeather condition="clear" intensity={0.5} />
+        <div className="text-center text-white relative z-10">
           <div className="animate-spin w-16 h-16 border-4 border-white border-t-transparent rounded-full mx-auto mb-4"></div>
           <p className="text-xl">Loading weather data...</p>
         </div>
@@ -294,22 +306,65 @@ const Index = () => {
     <TooltipProvider>
       <div className="min-h-screen relative overflow-hidden">
         <WeatherBackground condition={weatherData?.condition || 'clear'} />
+        <ParticleWeather 
+          condition={weatherData?.condition || 'clear'} 
+          intensity={particleIntensity} 
+        />
         
         <div className="relative z-10 min-h-screen bg-black/20 backdrop-blur-sm">
           <div className="container mx-auto px-4 py-6 max-w-6xl">
             {/* Header */}
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-8 gap-4">
               <div>
-                <h1 className="text-4xl lg:text-5xl font-bold text-white mb-2">
-                  Weather App
+                <h1 className="text-4xl lg:text-5xl font-bold text-white mb-2 bg-gradient-to-r from-yellow-400 via-pink-500 to-purple-600 bg-clip-text text-transparent">
+                  🌈 Epic Weather Universe
                 </h1>
                 <p className="text-white/80 text-lg">
-                  Real-time weather information and 5-day forecast
+                  Real-time weather with mind-blowing effects & gamification ✨
                 </p>
               </div>
               
-              {/* User Actions and Controls */}
+              {/* Controls */}
               <div className="flex flex-col sm:flex-row gap-4 lg:items-center">
+                {/* View Mode Toggles */}
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => setViewMode('normal')}
+                    className={`${viewMode === 'normal' ? 'bg-purple-500' : 'bg-white/20'} hover:bg-purple-600 text-white`}
+                    size="sm"
+                  >
+                    <Sun className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    onClick={() => setViewMode('globe')}
+                    className={`${viewMode === 'globe' ? 'bg-blue-500' : 'bg-white/20'} hover:bg-blue-600 text-white`}
+                    size="sm"
+                  >
+                    <Palette className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    onClick={() => setViewMode('game')}
+                    className={`${viewMode === 'game' ? 'bg-green-500' : 'bg-white/20'} hover:bg-green-600 text-white`}
+                    size="sm"
+                  >
+                    <Gamepad2 className="w-4 h-4" />
+                  </Button>
+                </div>
+
+                {/* Particle Intensity */}
+                <div className="flex items-center gap-2">
+                  <span className="text-white text-sm">Effects:</span>
+                  <input
+                    type="range"
+                    min="0"
+                    max="3"
+                    step="0.5"
+                    value={particleIntensity}
+                    onChange={(e) => setParticleIntensity(Number(e.target.value))}
+                    className="w-20"
+                  />
+                </div>
+
                 {/* User Authentication */}
                 <div className="flex items-center gap-2">
                   {user ? (
@@ -348,7 +403,7 @@ const Index = () => {
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="bg-white/90 border-white/50 text-gray-900 placeholder-gray-600 min-w-64"
                   />
-                  <Button type="submit" className="bg-white/20 hover:bg-white/30 text-white border-white/50">
+                  <Button type="submit" className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white">
                     <Search className="w-4 h-4" />
                   </Button>
                 </form>
@@ -361,6 +416,11 @@ const Index = () => {
                   °{isCelsius ? 'F' : 'C'}
                 </Button>
               </div>
+            </div>
+
+            {/* Voice Search */}
+            <div className="mb-6">
+              <VoiceWeatherSearch onSearch={handleVoiceSearch} />
             </div>
 
             {/* Favorite Locations (for logged in users) */}
@@ -380,7 +440,7 @@ const Index = () => {
                         variant="outline"
                         size="sm"
                         onClick={() => handleFavoriteLocationClick(location)}
-                        className="bg-white/20 hover:bg-white/30 text-white border-white/50"
+                        className="bg-gradient-to-r from-blue-500/20 to-purple-500/20 hover:from-blue-500/30 hover:to-purple-500/30 text-white border-white/50"
                       >
                         <MapPin className="w-3 h-3 mr-1" />
                         {location}
@@ -407,116 +467,144 @@ const Index = () => {
 
             {weatherData && (
               <>
-                {/* Current Weather */}
-                <div className="grid lg:grid-cols-3 gap-6 mb-8">
-                  <div className="lg:col-span-2">
-                    <WeatherCard 
+                {/* Main Content Based on View Mode */}
+                {viewMode === 'globe' && (
+                  <div className="mb-8">
+                    <WeatherGlobe 
                       weatherData={weatherData}
                       formatTemp={formatTemp}
-                      getWeatherTip={getWeatherTip}
-                      lastUpdated={lastUpdated}
                     />
-                    
-                    {/* Add to Favorites Button */}
-                    {weatherData && (
+                  </div>
+                )}
+
+                {viewMode === 'game' && (
+                  <div className="mb-8">
+                    <WeatherGameification
+                      weatherData={weatherData}
+                      forecastData={forecastData}
+                      formatTemp={formatTemp}
+                    />
+                  </div>
+                )}
+
+                {/* Current Weather - Always show in normal mode */}
+                {viewMode === 'normal' && (
+                  <div className="grid lg:grid-cols-3 gap-6 mb-8">
+                    <div className="lg:col-span-2">
+                      <WeatherCard 
+                        weatherData={weatherData}
+                        formatTemp={formatTemp}
+                        getWeatherTip={getWeatherTip}
+                        lastUpdated={lastUpdated}
+                      />
+                      
+                      {/* Add to Favorites Button */}
                       <div className="mt-4">
                         <Button
                           onClick={handleAddToFavorites}
                           variant="outline"
-                          className="bg-white/20 hover:bg-white/30 text-white border-white/50"
+                          className="bg-gradient-to-r from-pink-500/20 to-purple-500/20 hover:from-pink-500/30 hover:to-purple-500/30 text-white border-white/50"
                         >
                           <Star className="w-4 h-4 mr-2" />
                           {user ? 'Add to Favorites' : 'Sign in to Save'}
                         </Button>
                       </div>
-                    )}
+                    </div>
+                    
+                    {/* Weather Details */}
+                    <Card className="bg-white/10 backdrop-blur-md border-white/20 text-white">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Gauge className="w-5 h-5" />
+                          Weather Details
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="flex items-center justify-between p-3 bg-gradient-to-r from-red-500/20 to-orange-500/20 rounded-lg cursor-help border border-red-500/30">
+                              <div className="flex items-center gap-2">
+                                <Thermometer className="w-4 h-4" />
+                                <span>Feels like</span>
+                              </div>
+                              <span className="font-semibold">{formatTemp(weatherData.feelsLike)}</span>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="max-w-xs">{getMetricTooltip('feels-like')}</p>
+                          </TooltipContent>
+                        </Tooltip>
+
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="flex items-center justify-between p-3 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 rounded-lg cursor-help border border-blue-500/30">
+                              <div className="flex items-center gap-2">
+                                <Droplets className="w-4 h-4" />
+                                <span>Humidity</span>
+                              </div>
+                              <span className="font-semibold">{weatherData.humidity}%</span>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="max-w-xs">{getMetricTooltip('humidity')}</p>
+                          </TooltipContent>
+                        </Tooltip>
+
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="flex items-center justify-between p-3 bg-gradient-to-r from-green-500/20 to-teal-500/20 rounded-lg cursor-help border border-green-500/30">
+                              <div className="flex items-center gap-2">
+                                <Wind className="w-4 h-4" />
+                                <span>Wind Speed</span>
+                              </div>
+                              <span className="font-semibold">{Math.round(weatherData.windSpeed)} km/h</span>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="max-w-xs">{getMetricTooltip('wind')}</p>
+                          </TooltipContent>
+                        </Tooltip>
+
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="flex items-center justify-between p-3 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-lg cursor-help border border-purple-500/30">
+                              <div className="flex items-center gap-2">
+                                <Gauge className="w-4 h-4" />
+                                <span>Pressure</span>
+                              </div>
+                              <span className="font-semibold">{weatherData.pressure} hPa</span>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="max-w-xs">{getMetricTooltip('pressure')}</p>
+                          </TooltipContent>
+                        </Tooltip>
+
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="flex items-center justify-between p-3 bg-gradient-to-r from-indigo-500/20 to-blue-500/20 rounded-lg cursor-help border border-indigo-500/30">
+                              <div className="flex items-center gap-2">
+                                <Eye className="w-4 h-4" />
+                                <span>Visibility</span>
+                              </div>
+                              <span className="font-semibold">{weatherData.visibility} km</span>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="max-w-xs">{getMetricTooltip('visibility')}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </CardContent>
+                    </Card>
                   </div>
-                  
-                  {/* Weather Details */}
-                  <Card className="bg-white/10 backdrop-blur-md border-white/20 text-white">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Gauge className="w-5 h-5" />
-                        Weather Details
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div className="flex items-center justify-between p-3 bg-white/10 rounded-lg cursor-help">
-                            <div className="flex items-center gap-2">
-                              <Thermometer className="w-4 h-4" />
-                              <span>Feels like</span>
-                            </div>
-                            <span className="font-semibold">{formatTemp(weatherData.feelsLike)}</span>
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="max-w-xs">{getMetricTooltip('feels-like')}</p>
-                        </TooltipContent>
-                      </Tooltip>
+                )}
 
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div className="flex items-center justify-between p-3 bg-white/10 rounded-lg cursor-help">
-                            <div className="flex items-center gap-2">
-                              <Droplets className="w-4 h-4" />
-                              <span>Humidity</span>
-                            </div>
-                            <span className="font-semibold">{weatherData.humidity}%</span>
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="max-w-xs">{getMetricTooltip('humidity')}</p>
-                        </TooltipContent>
-                      </Tooltip>
-
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div className="flex items-center justify-between p-3 bg-white/10 rounded-lg cursor-help">
-                            <div className="flex items-center gap-2">
-                              <Wind className="w-4 h-4" />
-                              <span>Wind Speed</span>
-                            </div>
-                            <span className="font-semibold">{Math.round(weatherData.windSpeed)} km/h</span>
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="max-w-xs">{getMetricTooltip('wind')}</p>
-                        </TooltipContent>
-                      </Tooltip>
-
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div className="flex items-center justify-between p-3 bg-white/10 rounded-lg cursor-help">
-                            <div className="flex items-center gap-2">
-                              <Gauge className="w-4 h-4" />
-                              <span>Pressure</span>
-                            </div>
-                            <span className="font-semibold">{weatherData.pressure} hPa</span>
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="max-w-xs">{getMetricTooltip('pressure')}</p>
-                        </TooltipContent>
-                      </Tooltip>
-
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div className="flex items-center justify-between p-3 bg-white/10 rounded-lg cursor-help">
-                            <div className="flex items-center gap-2">
-                              <Eye className="w-4 h-4" />
-                              <span>Visibility</span>
-                            </div>
-                            <span className="font-semibold">{weatherData.visibility} km</span>
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="max-w-xs">{getMetricTooltip('visibility')}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </CardContent>
-                  </Card>
+                {/* Weather Mood Recommendations */}
+                <div className="mb-8">
+                  <WeatherMoodRecommendations
+                    weatherData={weatherData}
+                    formatTemp={formatTemp}
+                  />
                 </div>
 
                 {/* 5-Day Forecast */}
@@ -548,7 +636,7 @@ const Index = () => {
             {/* Footer */}
             <div className="mt-12 text-center text-white/70">
               <p className="text-sm">
-                Weather data provided by OpenWeatherMap API
+                🚀 Epic Weather Universe - Powered by OpenWeatherMap API & Creative Magic ✨
                 {lastUpdated && (
                   <span className="block mt-1">
                     Last updated: {lastUpdated.toLocaleTimeString()}
