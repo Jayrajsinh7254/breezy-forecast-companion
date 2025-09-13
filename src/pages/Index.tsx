@@ -23,6 +23,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { toast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+import { Search, MapPin, Thermometer, Droplets, Wind, Gauge, Eye, Sun, CloudRain, AlertTriangle, User, Star, Palette, Gamepad2, Mic, Plane } from 'lucide-react';
+
 
 const API_KEY = '60a052d032bc64d5ac340034a74b5aa3'; // Replace this with your actual OpenWeatherMap API key
 
