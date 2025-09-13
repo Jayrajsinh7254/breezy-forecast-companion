@@ -14,7 +14,11 @@ import { WeatherGlobe } from '@/components/WeatherGlobe';
 import { VoiceWeatherSearch } from '@/components/VoiceWeatherSearch';
 import { WeatherMoodRecommendations } from '@/components/WeatherMoodRecommendations';
 import { WeatherGameification } from '@/components/WeatherGameification';
-import { UserProfile } from '@/components/UserProfile';
+import { AviationWeatherDashboard } from '@/components/aviation/AviationWeatherDashboard';
+import { RadarMap } from '@/components/aviation/RadarMap';
+import { AlertSystem } from '@/components/aviation/AlertSystem';
+import { GapAnalysisDashboard } from '@/components/aviation/GapAnalysisDashboard';
+import { AviationNavigation } from '@/components/aviation/AviationNavigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { toast } from '@/hooks/use-toast';
@@ -60,7 +64,8 @@ const Index = () => {
   const [isCelsius, setIsCelsius] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<'normal' | 'globe' | 'game'>('normal');
+  const [viewMode, setViewMode] = useState<'normal' | 'globe' | 'game' | 'aviation'>('aviation');
+  const [aviationTab, setAviationTab] = useState<string>('dashboard');
   const [particleIntensity, setParticleIntensity] = useState(1);
 
   // Use user preferences for temperature unit
@@ -348,6 +353,12 @@ const Index = () => {
                     size="sm"
                   >
                     <Gamepad2 className="w-4 h-4" />
+                  <Button
+                    onClick={() => setViewMode('aviation')}
+                    className={`${viewMode === 'aviation' ? 'bg-red-500' : 'bg-white/20'} hover:bg-red-600 text-white`}
+                    size="sm"
+                  >
+                    <Plane className="w-4 h-4" />
                   </Button>
                 </div>
 

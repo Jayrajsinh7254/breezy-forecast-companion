@@ -124,7 +124,7 @@ export const WeatherGlobe: React.FC<WeatherGlobeProps> = ({ weatherData, formatT
         })}
       </div>
 
-      <style jsx>{`
+      <style>{`
         @keyframes float {
           0% { transform: translate(-50%, -50%) translateY(0px); }
           100% { transform: translate(-50%, -50%) translateY(-10px); }

@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Heart, Coffee, Shirt, Umbrella, Sunglasses, Music, Camera, Gamepad2 } from 'lucide-react';
+import { Heart, Coffee, Shirt, Umbrella, Glasses, Music, Camera, Gamepad2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 

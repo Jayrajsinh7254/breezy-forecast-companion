@@ -7,8 +7,154 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "13.0.5"
+  }
   public: {
     Tables: {
+      airfields: {
+        Row: {
+          code: string
+          country: string
+          created_at: string | null
+          elevation: number
+          id: string
+          is_active: boolean
+          latitude: number
+          longitude: number
+          name: string
+          timezone: string
+          updated_at: string | null
+        }
+        Insert: {
+          code: string
+          country: string
+          created_at?: string | null
+          elevation?: number
+          id?: string
+          is_active?: boolean
+          latitude: number
+          longitude: number
+          name: string
+          timezone?: string
+          updated_at?: string | null
+        }
+        Update: {
+          code?: string
+          country?: string
+          created_at?: string | null
+          elevation?: number
+          id?: string
+          is_active?: boolean
+          latitude?: number
+          longitude?: number
+          name?: string
+          timezone?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      audit_logs: {
+        Row: {
+          action: string
+          created_at: string | null
+          id: string
+          ip_address: unknown | null
+          new_values: Json | null
+          old_values: Json | null
+          resource_id: string | null
+          resource_type: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          new_values?: Json | null
+          old_values?: Json | null
+          resource_id?: string | null
+          resource_type: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          new_values?: Json | null
+          old_values?: Json | null
+          resource_id?: string | null
+          resource_type?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      contact_submissions: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          message: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          message: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          message?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      gap_analysis_features: {
+        Row: {
+          category: string
+          description: string
+          feature_name: string
+          id: string
+          implementation_notes: string | null
+          is_missing: boolean
+          is_present: boolean
+          priority: string
+          updated_at: string | null
+        }
+        Insert: {
+          category: string
+          description: string
+          feature_name: string
+          id?: string
+          implementation_notes?: string | null
+          is_missing?: boolean
+          is_present?: boolean
+          priority?: string
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string
+          description?: string
+          feature_name?: string
+          id?: string
+          implementation_notes?: string | null
+          is_missing?: boolean
+          is_present?: boolean
+          priority?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -69,6 +215,177 @@ export type Database = {
         }
         Relationships: []
       }
+      weather_alerts: {
+        Row: {
+          acknowledged_at: string | null
+          actual_value: number | null
+          airfield_id: string
+          alert_type: string
+          confidence_score: number | null
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          message: string
+          severity: string
+          threshold_value: number | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          actual_value?: number | null
+          airfield_id: string
+          alert_type: string
+          confidence_score?: number | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          message: string
+          severity: string
+          threshold_value?: number | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          acknowledged_at?: string | null
+          actual_value?: number | null
+          airfield_id?: string
+          alert_type?: string
+          confidence_score?: number | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          message?: string
+          severity?: string
+          threshold_value?: number | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weather_alerts_airfield_id_fkey"
+            columns: ["airfield_id"]
+            isOneToOne: false
+            referencedRelation: "airfields"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      weather_forecasts: {
+        Row: {
+          airfield_id: string
+          ceiling: number | null
+          confidence_score: number | null
+          created_at: string | null
+          forecast_hour: number
+          forecast_time: string
+          forecast_type: string
+          id: string
+          model_version: string
+          precipitation_probability: number | null
+          temperature: number | null
+          visibility: number | null
+          wind_direction: number | null
+          wind_speed: number | null
+        }
+        Insert: {
+          airfield_id: string
+          ceiling?: number | null
+          confidence_score?: number | null
+          created_at?: string | null
+          forecast_hour: number
+          forecast_time: string
+          forecast_type: string
+          id?: string
+          model_version?: string
+          precipitation_probability?: number | null
+          temperature?: number | null
+          visibility?: number | null
+          wind_direction?: number | null
+          wind_speed?: number | null
+        }
+        Update: {
+          airfield_id?: string
+          ceiling?: number | null
+          confidence_score?: number | null
+          created_at?: string | null
+          forecast_hour?: number
+          forecast_time?: string
+          forecast_type?: string
+          id?: string
+          model_version?: string
+          precipitation_probability?: number | null
+          temperature?: number | null
+          visibility?: number | null
+          wind_direction?: number | null
+          wind_speed?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weather_forecasts_airfield_id_fkey"
+            columns: ["airfield_id"]
+            isOneToOne: false
+            referencedRelation: "airfields"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      weather_thresholds: {
+        Row: {
+          airfield_id: string
+          ceiling_min: number | null
+          created_at: string | null
+          crosswind_max: number | null
+          id: string
+          is_active: boolean
+          temperature_max: number | null
+          temperature_min: number | null
+          updated_at: string | null
+          user_id: string
+          visibility_min: number | null
+          wind_speed_max: number | null
+        }
+        Insert: {
+          airfield_id: string
+          ceiling_min?: number | null
+          created_at?: string | null
+          crosswind_max?: number | null
+          id?: string
+          is_active?: boolean
+          temperature_max?: number | null
+          temperature_min?: number | null
+          updated_at?: string | null
+          user_id: string
+          visibility_min?: number | null
+          wind_speed_max?: number | null
+        }
+        Update: {
+          airfield_id?: string
+          ceiling_min?: number | null
+          created_at?: string | null
+          crosswind_max?: number | null
+          id?: string
+          is_active?: boolean
+          temperature_max?: number | null
+          temperature_min?: number | null
+          updated_at?: string | null
+          user_id?: string
+          visibility_min?: number | null
+          wind_speed_max?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weather_thresholds_airfield_id_fkey"
+            columns: ["airfield_id"]
+            isOneToOne: false
+            referencedRelation: "airfields"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -85,21 +402,25 @@ export type Database = {
   }
 }
 
-type DefaultSchema = Database[Extract<keyof Database, "public">]
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-        Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
-  ? (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-      Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
     ? R
@@ -117,14 +438,16 @@ export type Tables<
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
-  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Insert: infer I
     }
     ? I
@@ -140,14 +463,16 @@ export type TablesInsert<
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
-  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Update: infer U
     }
     ? U
@@ -163,14 +488,16 @@ export type TablesUpdate<
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   EnumName extends DefaultSchemaEnumNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
     : never = never,
-> = DefaultSchemaEnumNameOrOptions extends { schema: keyof Database }
-  ? Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
     ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
     : never
@@ -178,14 +505,16 @@ export type Enums<
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
     : never = never,
-> = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
     ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
