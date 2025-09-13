@@ -347,7 +347,7 @@ const Index = () => {
                   >
                     <Palette className="w-4 h-4" />
                   </Button>
-                  <Button
+                  {/* <Button
                     onClick={() => setViewMode('game')}
                     className={`${viewMode === 'game' ? 'bg-green-500' : 'bg-white/20'} hover:bg-green-600 text-white`}
                     size="sm"
@@ -359,7 +359,23 @@ const Index = () => {
                     size="sm"
                   >
                     <Plane className="w-4 h-4" />
-                  </Button>
+                  </Button> */}
+                  <Button
+  onClick={() => setViewMode('game')}
+  className={`${viewMode === 'game' ? 'bg-green-500' : 'bg-white/20'} hover:bg-green-600 text-white`}
+  size="sm"
+>
+  <Gamepad2 className="w-4 h-4" />
+</Button>   {/* ✅ properly closed */}
+
+<Button
+  onClick={() => setViewMode('aviation')}
+  className={`${viewMode === 'aviation' ? 'bg-red-500' : 'bg-white/20'} hover:bg-red-600 text-white`}
+  size="sm"
+>
+  <Plane className="w-4 h-4" />
+</Button>
+
                 </div>
 
                 {/* Particle Intensity */}
