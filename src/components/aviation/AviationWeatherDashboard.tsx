@@ -8,6 +8,8 @@ import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
+import { RadarMap } from './RadarMap';
+import { RiskLevelIndicator } from './RiskLevelIndicator';
 
 interface Airfield {
   id: string;
@@ -50,6 +52,12 @@ export const AviationWeatherDashboard: React.FC = () => {
   const [weatherData, setWeatherData] = useState<AviationWeatherData | null>(null);
   const [alerts, setAlerts] = useState<WeatherAlert[]>([]);
   const [loading, setLoading] = useState(true);
+  const [riskFactors, setRiskFactors] = useState({
+    trafficDensity: 0,
+    weatherRisk: 0,
+    windRisk: 0,
+    systemAlerts: 0
+  });
 
   useEffect(() => {
     fetchAirfields();
@@ -317,6 +325,19 @@ export const AviationWeatherDashboard: React.FC = () => {
           </CardContent>
         </Card>
       )}
+
+      {/* Main Dashboard Grid */}
+      <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+        {/* Radar Map - Takes up 3/4 of the width */}
+        <div className="xl:col-span-3">
+          <RadarMap onRiskUpdate={setRiskFactors} />
+        </div>
+        
+        {/* Risk Level Indicator - Takes up 1/4 of the width */}
+        <div className="xl:col-span-1">
+          <RiskLevelIndicator factors={riskFactors} />
+        </div>
+      </div>
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
