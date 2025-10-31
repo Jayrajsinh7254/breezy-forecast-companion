@@ -495,7 +495,6 @@ export const RadarMap: React.FC<RadarMapProps> = ({ onRiskUpdate }) => {
 
       {/* Map */}
       <MapComponent 
-        weatherLayers={weatherLayers}
         airfields={airfields}
         aircraft={showAircraft ? aircraft : []}
         windData={showWindData ? windData : []}

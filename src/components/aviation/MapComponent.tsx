@@ -41,7 +41,6 @@ interface MapComponentProps {
   airfields: Airfield[];
   aircraft: Aircraft[];
   windData: WindData[];
-  weatherLayers: any[];
   createCustomIcon: (riskLevel: string) => L.DivIcon;
   createAircraftIcon: (aircraft: Aircraft) => L.DivIcon;
   createWindIcon: (windData: WindData) => L.DivIcon;
@@ -71,7 +70,6 @@ export const MapComponent: React.FC<MapComponentProps> = ({
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
-          
           {airfields.map((airfield) => (
             <Marker
               key={airfield.id}
@@ -101,7 +99,6 @@ export const MapComponent: React.FC<MapComponentProps> = ({
               </Popup>
             </Marker>
           ))}
-
           {aircraft.map((plane) => (
             <Marker
               key={plane.id}
@@ -132,7 +129,6 @@ export const MapComponent: React.FC<MapComponentProps> = ({
               </Popup>
             </Marker>
           ))}
-
           {windData.map((wind, index) => (
             <Marker
               key={`wind-${index}`}
