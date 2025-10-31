@@ -280,7 +280,7 @@ type WeatherThreshold = Tables<'weather_thresholds'>;
 
 export const UserProfile: React.FC<UserProfileProps> = ({ onClose }) => {
   const { user, signOut } = useAuth();
-  const { preferences, addFavoriteLocation, removeFavoriteLocation } = useUserPreferences();
+  const { preferences, updatePreferences, addFavoriteLocation, removeFavoriteLocation } = useUserPreferences();
   const [profile, setProfile] = useState({ full_name: '', username: '' });
   const [newLocation, setNewLocation] = useState('');
   const [loading, setLoading] = useState(false);
