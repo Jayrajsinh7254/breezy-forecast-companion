@@ -530,10 +530,12 @@ export const RadarMap: React.FC<RadarMapProps> = ({ onRiskUpdate }) => {
       <Card className="bg-white/10 backdrop-blur-md border-white/20 text-white overflow-hidden">
         <div style={{ height: '600px', width: '100%' }}>
           <MapContainer
+            key="aviation-radar-map"
             center={[39.8283, -98.5795]} // Center of USA
             zoom={4}
             style={{ height: '100%', width: '100%' }}
             className="rounded-lg"
+            scrollWheelZoom={true}
           >
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
