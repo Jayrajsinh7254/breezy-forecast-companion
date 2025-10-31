@@ -531,21 +531,19 @@ export const RadarMap: React.FC<RadarMapProps> = ({ onRiskUpdate }) => {
         <div style={{ height: '600px', width: '100%' }}>
           <MapContainer
             key="aviation-radar-map"
-            center={[39.8283, -98.5795]} // Center of USA
+            center={[39.8283, -98.5795]}
             zoom={4}
             style={{ height: '100%', width: '100%' }}
             className="rounded-lg"
             scrollWheelZoom={true}
           >
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
-            
-            <WeatherOverlay layers={weatherLayers} />
-            
-            {/* Airfield Markers */}
-            {airfields.map((airfield) => (
+            <React.Fragment>
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+              <WeatherOverlay layers={weatherLayers} />
+              {airfields.map((airfield) => (
               <Marker
                 key={airfield.id}
                 position={[airfield.latitude, airfield.longitude]}
@@ -574,8 +572,6 @@ export const RadarMap: React.FC<RadarMapProps> = ({ onRiskUpdate }) => {
                 </Popup>
               </Marker>
             ))}
-
-            {/* Aircraft Markers */}
             {showAircraft && aircraft.map((plane) => (
               <Marker
                 key={plane.id}
@@ -611,8 +607,6 @@ export const RadarMap: React.FC<RadarMapProps> = ({ onRiskUpdate }) => {
                 </Popup>
               </Marker>
             ))}
-
-            {/* Wind Data Markers */}
             {showWindData && windData.map((wind, index) => (
               <Marker
                 key={`wind-${index}`}
@@ -634,6 +628,7 @@ export const RadarMap: React.FC<RadarMapProps> = ({ onRiskUpdate }) => {
                 </Popup>
               </Marker>
             ))}
+            </React.Fragment>
           </MapContainer>
         </div>
       </Card>
