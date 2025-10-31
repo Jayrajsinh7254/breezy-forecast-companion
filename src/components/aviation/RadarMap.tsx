@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap, Polyline } from 'react-leaflet';
 import L from 'leaflet';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,6 +6,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Layers, Radar, Plane, RefreshCw, Wind, Navigation } from 'lucide-react';
+import { MapComponent } from './MapComponent';
 import 'leaflet/dist/leaflet.css';
 
 // Fix for default marker icons in react-leaflet
@@ -56,39 +56,6 @@ interface WindData {
   direction: number; // in degrees
   strength: 'light' | 'moderate' | 'strong' | 'severe';
 }
-
-// Weather overlay component
-const WeatherOverlay: React.FC<{ layers: WeatherLayer[] }> = ({ layers }) => {
-  const map = useMap();
-  const overlayRefs = useRef<{ [key: string]: L.TileLayer }>({});
-
-  useEffect(() => {
-    layers.forEach(layer => {
-      if (layer.enabled && !overlayRefs.current[layer.id]) {
-        const tileLayer = L.tileLayer(layer.url, {
-          opacity: layer.opacity,
-          attribution: 'Weather data'
-        });
-        tileLayer.addTo(map);
-        overlayRefs.current[layer.id] = tileLayer;
-      } else if (!layer.enabled && overlayRefs.current[layer.id]) {
-        map.removeLayer(overlayRefs.current[layer.id]);
-        delete overlayRefs.current[layer.id];
-      } else if (layer.enabled && overlayRefs.current[layer.id]) {
-        overlayRefs.current[layer.id].setOpacity(layer.opacity);
-      }
-    });
-
-    return () => {
-      Object.values(overlayRefs.current).forEach(layer => {
-        map.removeLayer(layer);
-      });
-      overlayRefs.current = {};
-    };
-  }, [layers, map]);
-
-  return null;
-};
 
 interface RadarMapProps {
   onRiskUpdate?: (factors: { trafficDensity: number; weatherRisk: number; windRisk: number; systemAlerts: number }) => void;
@@ -527,111 +494,16 @@ export const RadarMap: React.FC<RadarMapProps> = ({ onRiskUpdate }) => {
       </Card>
 
       {/* Map */}
-      <Card className="bg-white/10 backdrop-blur-md border-white/20 text-white overflow-hidden">
-        <div style={{ height: '600px', width: '100%' }}>
-          <MapContainer
-            key="aviation-radar-map"
-            center={[39.8283, -98.5795]}
-            zoom={4}
-            style={{ height: '100%', width: '100%' }}
-            className="rounded-lg"
-            scrollWheelZoom={true}
-          >
-            <React.Fragment>
-              <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              />
-              <WeatherOverlay layers={weatherLayers} />
-              {airfields.map((airfield) => (
-              <Marker
-                key={airfield.id}
-                position={[airfield.latitude, airfield.longitude]}
-                icon={createCustomIcon(airfield.risk_level)}
-              >
-                <Popup className="custom-popup">
-                  <div className="text-gray-900 min-w-48">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Plane className="w-4 h-4" />
-                      <strong>{airfield.code}</strong>
-                    </div>
-                    <h3 className="font-semibold mb-1">{airfield.name}</h3>
-                    <div className="text-sm space-y-1">
-                      <div>Elevation: {airfield.elevation} ft</div>
-                      <div className="flex items-center gap-2">
-                        <span>Risk Level:</span>
-                        <span 
-                          className="px-2 py-1 rounded text-xs font-medium text-white"
-                          style={{ backgroundColor: getRiskColor(airfield.risk_level) }}
-                        >
-                          {airfield.risk_level.toUpperCase()}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </Popup>
-              </Marker>
-            ))}
-            {showAircraft && aircraft.map((plane) => (
-              <Marker
-                key={plane.id}
-                position={[plane.latitude, plane.longitude]}
-                icon={createAircraftIcon(plane)}
-              >
-                <Popup className="custom-popup">
-                  <div className="text-gray-900 min-w-64">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Navigation className="w-4 h-4" />
-                      <strong>{plane.callsign}</strong>
-                      <Badge variant="outline" className="text-xs">
-                        {plane.aircraft_type}
-                      </Badge>
-                    </div>
-                    <div className="text-sm space-y-1">
-                      <div className="grid grid-cols-2 gap-2">
-                        <div><strong>Altitude:</strong> {plane.altitude.toLocaleString()} ft</div>
-                        <div><strong>Speed:</strong> {plane.speed} kts</div>
-                        <div><strong>Heading:</strong> {plane.heading}°</div>
-                        <div><strong>Status:</strong> {plane.status}</div>
-                      </div>
-                      <div className="pt-2 border-t">
-                        <div><strong>Route:</strong> {plane.departure} → {plane.destination}</div>
-                      </div>
-                      <div className="pt-1">
-                        <div className="text-xs text-gray-600">
-                          Local conditions: Clear visibility, {Math.floor(Math.random() * 20 + 10)} kt winds
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </Popup>
-              </Marker>
-            ))}
-            {showWindData && windData.map((wind, index) => (
-              <Marker
-                key={`wind-${index}`}
-                position={[wind.latitude, wind.longitude]}
-                icon={createWindIcon(wind)}
-              >
-                <Popup className="custom-popup">
-                  <div className="text-gray-900 min-w-32">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Wind className="w-4 h-4" />
-                      <strong>Wind Data</strong>
-                    </div>
-                    <div className="text-sm space-y-1">
-                      <div><strong>Speed:</strong> {wind.speed} knots</div>
-                      <div><strong>Direction:</strong> {wind.direction}°</div>
-                      <div><strong>Strength:</strong> {wind.strength}</div>
-                    </div>
-                  </div>
-                </Popup>
-              </Marker>
-            ))}
-            </React.Fragment>
-          </MapContainer>
-        </div>
-      </Card>
+      <MapComponent 
+        weatherLayers={weatherLayers}
+        airfields={airfields}
+        aircraft={showAircraft ? aircraft : []}
+        windData={showWindData ? windData : []}
+        createCustomIcon={createCustomIcon}
+        createAircraftIcon={createAircraftIcon}
+        createWindIcon={createWindIcon}
+        getRiskColor={getRiskColor}
+      />
 
       {/* Legend */}
       <Card className="bg-white/10 backdrop-blur-md border-white/20 text-white">
