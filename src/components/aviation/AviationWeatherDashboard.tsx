@@ -10,6 +10,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
 import { RadarMap } from './RadarMap';
 import { RiskLevelIndicator } from './RiskLevelIndicator';
+import { generateWeatherAlerts } from '@/utils/weatherAlertGenerator';
 
 interface Airfield {
   id: string;
@@ -131,17 +132,38 @@ export const AviationWeatherDashboard: React.FC = () => {
       // For now, we'll simulate aviation weather data
       const mockData: AviationWeatherData = {
         temperature: Math.random() * 30 + 5, // 5-35°C
-        wind_speed: Math.random() * 40, // 0-40 knots
+        wind_speed: Math.random() * 50, // 0-50 knots (increased range to test alerts)
         wind_direction: Math.floor(Math.random() * 360), // 0-359°
-        visibility: Math.random() * 10 + 1, // 1-11 km
+        visibility: Math.random() * 10 + 0.5, // 0.5-10.5 km (can go lower for testing)
         ceiling: Math.floor(Math.random() * 5000) + 500, // 500-5500 ft
         pressure: Math.random() * 50 + 980, // 980-1030 hPa
         humidity: Math.random() * 100,
-        conditions: ['Clear', 'Partly cloudy', 'Overcast', 'Rain', 'Fog'][Math.floor(Math.random() * 5)],
+        conditions: ['Clear', 'Partly cloudy', 'Overcast', 'Rain', 'Fog', 'Thunderstorm'][Math.floor(Math.random() * 6)],
         risk_level: (['low', 'medium', 'high', 'critical'] as const)[Math.floor(Math.random() * 4)]
       };
 
       setWeatherData(mockData);
+
+      // Generate automatic alerts based on weather conditions
+      if (user) {
+        await generateWeatherAlerts({
+          userId: user.id,
+          airfieldId: airfield.id,
+          airfieldCode: airfield.code,
+          weather: {
+            temperature: mockData.temperature,
+            wind_speed: mockData.wind_speed,
+            wind_direction: mockData.wind_direction,
+            visibility: mockData.visibility,
+            conditions: mockData.conditions,
+            pressure: mockData.pressure,
+            humidity: mockData.humidity
+          }
+        });
+
+        // Refresh alerts after generation
+        await fetchAlerts();
+      }
     } catch (error) {
       console.error('Error fetching weather data:', error);
       toast({
