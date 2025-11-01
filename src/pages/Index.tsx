@@ -517,12 +517,6 @@ const Index = () => {
                   </div>
                 )}
 
-                {viewMode === 'aviation' && (
-                  <div className="mb-8">
-                    <AviationWeatherDashboard />
-                  </div>
-                )}
-
                 {/* Current Weather - Always show in normal mode */}
                 {viewMode === 'normal' && (
                   <div className="grid lg:grid-cols-3 gap-6 mb-8">
