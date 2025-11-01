@@ -1,8 +1,7 @@
 import React from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer } from 'react-leaflet';
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Plane, Wind, Navigation } from 'lucide-react';
+import { MapContent } from './MapContent';
 import 'leaflet/dist/leaflet.css';
 
 interface Airfield {
@@ -66,90 +65,15 @@ export const MapComponent: React.FC<MapComponentProps> = ({
           className="rounded-lg"
           scrollWheelZoom={true}
         >
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          <MapContent
+            airfields={airfields}
+            aircraft={aircraft}
+            windData={windData}
+            createCustomIcon={createCustomIcon}
+            createAircraftIcon={createAircraftIcon}
+            createWindIcon={createWindIcon}
+            getRiskColor={getRiskColor}
           />
-          {airfields.map((airfield) => (
-            <Marker
-              key={airfield.id}
-              position={[airfield.latitude, airfield.longitude]}
-              icon={createCustomIcon(airfield.risk_level)}
-            >
-              <Popup className="custom-popup">
-                <div className="text-gray-900 min-w-48">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Plane className="w-4 h-4" />
-                    <strong>{airfield.code}</strong>
-                  </div>
-                  <h3 className="font-semibold mb-1">{airfield.name}</h3>
-                  <div className="text-sm space-y-1">
-                    <div>Elevation: {airfield.elevation} ft</div>
-                    <div className="flex items-center gap-2">
-                      <span>Risk Level:</span>
-                      <span 
-                        className="px-2 py-1 rounded text-xs font-medium text-white"
-                        style={{ backgroundColor: getRiskColor(airfield.risk_level) }}
-                      >
-                        {airfield.risk_level.toUpperCase()}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </Popup>
-            </Marker>
-          ))}
-          {aircraft.map((plane) => (
-            <Marker
-              key={plane.id}
-              position={[plane.latitude, plane.longitude]}
-              icon={createAircraftIcon(plane)}
-            >
-              <Popup className="custom-popup">
-                <div className="text-gray-900 min-w-64">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Navigation className="w-4 h-4" />
-                    <strong>{plane.callsign}</strong>
-                    <Badge variant="outline" className="text-xs">
-                      {plane.aircraft_type}
-                    </Badge>
-                  </div>
-                  <div className="text-sm space-y-1">
-                    <div className="grid grid-cols-2 gap-2">
-                      <div><strong>Altitude:</strong> {plane.altitude.toLocaleString()} ft</div>
-                      <div><strong>Speed:</strong> {plane.speed} kts</div>
-                      <div><strong>Heading:</strong> {plane.heading}°</div>
-                      <div><strong>Status:</strong> {plane.status}</div>
-                    </div>
-                    <div className="pt-2 border-t">
-                      <div><strong>Route:</strong> {plane.departure} → {plane.destination}</div>
-                    </div>
-                  </div>
-                </div>
-              </Popup>
-            </Marker>
-          ))}
-          {windData.map((wind, index) => (
-            <Marker
-              key={`wind-${index}`}
-              position={[wind.latitude, wind.longitude]}
-              icon={createWindIcon(wind)}
-            >
-              <Popup className="custom-popup">
-                <div className="text-gray-900 min-w-32">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Wind className="w-4 h-4" />
-                    <strong>Wind Data</strong>
-                  </div>
-                  <div className="text-sm space-y-1">
-                    <div><strong>Speed:</strong> {wind.speed} knots</div>
-                    <div><strong>Direction:</strong> {wind.direction}°</div>
-                    <div><strong>Strength:</strong> {wind.strength}</div>
-                  </div>
-                </div>
-              </Popup>
-            </Marker>
-          ))}
         </MapContainer>
       </div>
     </Card>
