@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
 import { WeatherCard } from '@/components/WeatherCard';
 import { ForecastCard } from '@/components/ForecastCard';
 import { WeatherBackground } from '@/components/WeatherBackground';
@@ -25,6 +26,7 @@ import { toast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { Search, MapPin, Thermometer, Droplets, Wind, Gauge, Eye, Sun, CloudRain, AlertTriangle, User, Star, Palette, Gamepad2, Mic, Plane } from 'lucide-react';
 import { UserProfile } from '@/components/UserProfile';
+import { supabase } from '@/integrations/supabase/client';
 
 
 const API_KEY = '60a052d032bc64d5ac340034a74b5aa3'; // Replace this with your actual OpenWeatherMap API key
@@ -54,6 +56,16 @@ interface ForecastData {
   windSpeed: number;
 }
 
+interface WeatherAlert {
+  id: string;
+  alert_type: string;
+  severity: string;
+  title: string;
+  message: string;
+  actual_value: number;
+  created_at: string;
+}
+
 const Index = () => {
   const { user, loading: authLoading } = useAuth();
   const { preferences, addFavoriteLocation } = useUserPreferences();
@@ -70,6 +82,7 @@ const Index = () => {
   const [viewMode, setViewMode] = useState<'normal' | 'globe' | 'game' | 'aviation'>('aviation');
   const [aviationTab, setAviationTab] = useState<string>('dashboard');
   const [particleIntensity, setParticleIntensity] = useState(1);
+  const [weatherAlerts, setWeatherAlerts] = useState<WeatherAlert[]>([]);
 
   // Use user preferences for temperature unit
   useEffect(() => {
@@ -292,11 +305,49 @@ const Index = () => {
     }
   };
 
+  const fetchWeatherAlerts = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('weather_alerts')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      if (error) throw error;
+      setWeatherAlerts(data || []);
+    } catch (err) {
+      console.error('Error fetching alerts:', err);
+    }
+  };
+
   useEffect(() => {
     fetchWeatherData();
+    if (user) {
+      fetchWeatherAlerts();
+    }
   }, [user, preferences.default_location]);
 
   const severeWeatherAlert = weatherData ? getSevereWeatherAlert(weatherData) : null;
+
+  const getSeverityColor = (severity: string) => {
+    switch (severity.toLowerCase()) {
+      case 'critical':
+      case 'red':
+        return 'bg-red-500/20 border-red-500/50 text-red-100';
+      case 'high':
+      case 'orange':
+        return 'bg-orange-500/20 border-orange-500/50 text-orange-100';
+      case 'medium':
+      case 'yellow':
+        return 'bg-yellow-500/20 border-yellow-500/50 text-yellow-100';
+      default:
+        return 'bg-blue-500/20 border-blue-500/50 text-blue-100';
+    }
+  };
 
   if (authLoading || loading) {
     return (
@@ -493,6 +544,41 @@ const Index = () => {
                 <AlertTriangle className="h-4 w-4" />
                 <AlertDescription className="font-semibold">{severeWeatherAlert}</AlertDescription>
               </Alert>
+            )}
+
+            {/* Active Weather Alerts */}
+            {user && weatherAlerts.length > 0 && (
+              <Card className="mb-6 bg-white/10 backdrop-blur-md border-white/20 text-white">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <AlertTriangle className="w-5 h-5" />
+                    Active Weather Alerts
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {weatherAlerts.map((alert) => (
+                    <Alert key={alert.id} className={getSeverityColor(alert.severity)}>
+                      <div className="flex items-start gap-3">
+                        <AlertTriangle className="h-5 w-5 mt-0.5" />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-semibold">{alert.title}</span>
+                            <Badge variant="outline" className="capitalize">
+                              {alert.severity}
+                            </Badge>
+                          </div>
+                          <p className="text-sm opacity-90">{alert.message}</p>
+                          {alert.actual_value && (
+                            <p className="text-xs mt-1 opacity-75">
+                              Current value: {alert.actual_value}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </Alert>
+                  ))}
+                </CardContent>
+              </Card>
             )}
 
             {weatherData && (
