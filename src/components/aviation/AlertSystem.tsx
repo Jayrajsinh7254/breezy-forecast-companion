@@ -47,7 +47,7 @@ export const AlertSystem: React.FC = () => {
     minimumSeverity: 'medium'
   });
   const [loading, setLoading] = useState(true);
-  const audioRef = useRef<HTMLAudioElement>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const [lastAlertCheck, setLastAlertCheck] = useState(new Date());
 
   useEffect(() => {
@@ -59,6 +59,7 @@ export const AlertSystem: React.FC = () => {
   }, [user]);
 
   useEffect(() => {
+    // Check for new alerts every 30 seconds
     const interval = setInterval(() => {
       if (user) {
         checkForNewAlerts();
@@ -78,25 +79,18 @@ export const AlertSystem: React.FC = () => {
           *,
           airfield:airfields(code, name)
         `)
+        .eq('user_id', user.id)
         .eq('is_active', true)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      
-      const formattedAlerts = (data || []).map(alert => ({
+      setAlerts((data || []).map(alert => ({
         ...alert,
         severity: alert.severity as 'low' | 'medium' | 'high' | 'critical',
         airfield: alert.airfield
-      }));
-      
-      setAlerts(formattedAlerts);
+      })));
     } catch (error) {
       console.error('Error fetching alerts:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load alerts',
-        variant: 'destructive'
-      });
     } finally {
       setLoading(false);
     }
@@ -112,6 +106,7 @@ export const AlertSystem: React.FC = () => {
           *,
           airfield:airfields(code, name)
         `)
+        .eq('user_id', user.id)
         .eq('is_active', true)
         .gt('created_at', lastAlertCheck.toISOString());
 
@@ -129,10 +124,10 @@ export const AlertSystem: React.FC = () => {
           });
         });
 
-        setAlerts(prev => [...prev, ...data.map(alert => ({
+        setAlerts(prev => [...data.map(alert => ({
           ...alert,
           severity: alert.severity as 'low' | 'medium' | 'high' | 'critical'
-        }))]);
+        })), ...prev]);
         setLastAlertCheck(new Date());
       }
     } catch (error) {
@@ -149,7 +144,8 @@ export const AlertSystem: React.FC = () => {
         { 
           event: 'INSERT', 
           schema: 'public', 
-          table: 'weather_alerts'
+          table: 'weather_alerts',
+          filter: `user_id=eq.${user.id}`
         }, 
         (payload) => {
           const newAlert = payload.new as WeatherAlert;
@@ -168,9 +164,8 @@ export const AlertSystem: React.FC = () => {
 
   const shouldTriggerAlert = (alertSeverity: string, minimumSeverity: string): boolean => {
     const severityLevels = { low: 1, medium: 2, high: 3, critical: 4 };
-    const alertLevel = severityLevels[alertSeverity as keyof typeof severityLevels] || 0;
-    const minLevel = severityLevels[minimumSeverity as keyof typeof severityLevels] || 0;
-    return alertLevel >= minLevel;
+    return severityLevels[alertSeverity as keyof typeof severityLevels] >= 
+           severityLevels[minimumSeverity as keyof typeof severityLevels];
   };
 
   const triggerAlert = (alert: WeatherAlert) => {
@@ -209,28 +204,20 @@ export const AlertSystem: React.FC = () => {
     try {
       const { error } = await supabase
         .from('weather_alerts')
-        .update({ 
-          acknowledged_at: new Date().toISOString(),
-          is_active: false 
-        })
+        .update({ acknowledged_at: new Date().toISOString() })
         .eq('id', alertId);
 
       if (error) throw error;
 
-      setAlerts(prev => prev.filter(alert => alert.id !== alertId));
-      
-      toast({
-        title: 'Alert Acknowledged',
-        description: 'Alert has been marked as read',
-        variant: 'default'
-      });
+      setAlerts(prev =>
+        prev.map(alert =>
+          alert.id === alertId
+            ? { ...alert, acknowledged_at: new Date().toISOString() }
+            : alert
+        )
+      );
     } catch (error) {
       console.error('Error acknowledging alert:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to acknowledge alert',
-        variant: 'destructive'
-      });
     }
   };
 
@@ -244,19 +231,8 @@ export const AlertSystem: React.FC = () => {
       if (error) throw error;
 
       setAlerts(prev => prev.filter(alert => alert.id !== alertId));
-      
-      toast({
-        title: 'Alert Dismissed',
-        description: 'Alert has been removed',
-        variant: 'default'
-      });
     } catch (error) {
       console.error('Error dismissing alert:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to dismiss alert',
-        variant: 'destructive'
-      });
     }
   };
 
@@ -302,14 +278,14 @@ export const AlertSystem: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6 p-4">
+    <div className="space-y-6">
       {/* Hidden audio element for alerts */}
       <audio
         ref={audioRef}
         preload="auto"
         className="hidden"
       >
-        <source src="/alert-sound.wav" type="audio/wav" />
+        <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBT2a1+/VfykDMImx9t2QQEgIfavc86hVET+X2PnqXhEbTKvo7KFTEAc=" type="audio/wav" />
       </audio>
 
       {/* Header and Settings */}
@@ -366,10 +342,10 @@ export const AlertSystem: React.FC = () => {
                 onChange={(e) => setSettings(prev => ({ ...prev, minimumSeverity: e.target.value as any }))}
                 className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-md text-white text-sm"
               >
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-                <option value="critical">Critical</option>
+                <option value="low" className="bg-gray-800">Low</option>
+                <option value="medium" className="bg-gray-800">Medium</option>
+                <option value="high" className="bg-gray-800">High</option>
+                <option value="critical" className="bg-gray-800">Critical</option>
               </select>
             </div>
           </div>
@@ -475,7 +451,7 @@ export const AlertSystem: React.FC = () => {
         <Button
           onClick={() => {
             const testAlert: WeatherAlert = {
-              id: 'test-' + Date.now(),
+              id: 'test',
               airfield_id: 'test',
               alert_type: 'test',
               severity: 'medium',
